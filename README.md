@@ -1,4 +1,4 @@
-**NOTICE** This is a course project for 30240243 Operating System, Tsinghua University. It is based on (ucore_os_lab)[https://github.com/chyyuu/ucore_os_lab].
+**NOTICE** This is a course project for 30240243 Operating System, Tsinghua University. It is based on [ucore_os_lab](https://github.com/chyyuu/ucore_os_lab).
 
 # 介绍(2016春季)
 

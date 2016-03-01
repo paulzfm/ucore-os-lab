@@ -54,8 +54,6 @@ idt_init(void) {
           // initialize all vectors as trap gate, later we can update those >= 32 to support user-defined interrupts
           SETGATE(idt[i], 1, GD_KTEXT, __vectors[i], DPL_KERNEL);
       }
-      // for Challenge 1: user-defined interrupt, switch to kernel
-      SETGATE(idt[T_SWITCH_TOK], 0, GD_KTEXT, __vectors[T_SWITCH_TOK], DPL_USER);
       lidt(&idt_pd); // (3)
 }
 
@@ -176,21 +174,10 @@ trap_dispatch(struct trapframe *tf) {
         c = cons_getc();
         cprintf("kbd [%03d] %c\n", c, c);
         break;
-    //LAB1 CHALLENGE 1 : 2012011894 you should modify below codes.
-    // TODO: impl
+    //LAB1 CHALLENGE 1 : YOUR CODE you should modify below codes.
     case T_SWITCH_TOU:
-        tf->tf_cs = USER_CS;
-        tf->tf_ds = USER_DS;
-        tf->tf_es = USER_DS;
-        tf->tf_ss = USER_DS;
-        break;
     case T_SWITCH_TOK:
-        if (tf->tf_cs != KERNEL_CS) { // not in kernel
-            tf->tf_cs = KERNEL_CS;
-            tf->tf_ds = KERNEL_DS;
-            tf->tf_es = KERNEL_DS;
-            tf->tf_eflags &= ~FL_IOPL_MASK;
-        }
+        panic("T_SWITCH_** ??\n");
         break;
     case IRQ_OFFSET + IRQ_IDE1:
     case IRQ_OFFSET + IRQ_IDE2:
