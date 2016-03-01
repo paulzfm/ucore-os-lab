@@ -187,6 +187,46 @@
 
 #### bootloader如何读取硬盘扇区的？
 
+一个扇区大小为512字节。读一个扇区由`readsect`实现 (Line 44, `boot/bootmain.c`)，步骤大致如下：
 
+1. 等待磁盘准备好；
+2. 发出读取扇区的命令：首先设置读取扇区数为1，根据扇区号`secno`生成LBA参数，最后发送读取命令；
+3. 等待磁盘准备好；
+4. 把磁盘扇区数据读到指定内存。
 
 #### bootloader是如何加载ELF格式的OS？
+
+`bootmain` (Line 86, `boot/bootmain.c`) 给出了加载ELF格式OS的主要流程：
+
+1. 读取磁盘第1个段；
+2. 判断`magic`数是否为ELF格式规定的数，如果不是，报错；否则，继续；
+3. 获取段首地址`ph`和末地址`eph`；
+4. 依次读取每个段；
+5. 跳转到程序入口虚拟地址执行。
+
+#### 练习5：实现函数调用堆栈跟踪函数（需要编程）
+
+按照调用堆栈的结构，通过`%ebp`的值递归查找出每个栈帧，并打印出相关参数，具体实现见`print_stackframe` (Line 291, `kern/debug/kdebug.c`)。
+
+某次的输出结果为
+
+    ebp:0x00007b18 eip:0x00100960 args:0x00010074 0x0010ee00 0x00007b48 0x0010007f
+        kern/debug/kdebug.c:307: print_stackframe+22
+    ebp:0x00007b28 eip:0x00100c42 args:0x00000000 0x00000000 0x00000000 0x00007b98
+        kern/debug/kmonitor.c:125: mon_backtrace+10
+    ebp:0x00007b48 eip:0x0010007f args:0x00000000 0x00007b70 0xffff0000 0x00007b74
+        kern/init/init.c:48: grade_backtrace2+19
+    ebp:0x00007b68 eip:0x001000a0 args:0x00000000 0xffff0000 0x00007b94 0x00000029
+        kern/init/init.c:53: grade_backtrace1+27
+    ebp:0x00007b88 eip:0x001000bc args:0x00000000 0x00100000 0xffff0000 0x00100043
+        kern/init/init.c:58: grade_backtrace0+19
+    ebp:0x00007ba8 eip:0x001000dc args:0x00000000 0x00000000 0x00000000 0x00103160
+        kern/init/init.c:63: grade_backtrace+26
+    ebp:0x00007bc8 eip:0x00100050 args:0x00000000 0x00000000 0x00010074 0x0010ed20
+        kern/init/init.c:28: kern_init+79
+    ebp:0x00007bf8 eip:0x00007d68 args:0xc031fcfa 0xc08ed88e 0x64e4d08e 0xfa7502a8
+        <unknow>: -- 0x00007d67 --
+
+最后一行的含义是`bootmain`函数的`%ebp`为`0x00007bf8`，返回地址为`0x00007d68`，四个参数依次为`0xc031fcfa, 0xc08ed88e, 0x64e4d08e,  0xfa7502a8`。
+
+#### 
