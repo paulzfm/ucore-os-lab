@@ -33,10 +33,12 @@ static struct pseudodesc idt_pd = {
     sizeof(idt) - 1, (uintptr_t)idt
 };
 
+extern uintptr_t __vectors[]; // (1)
+
 /* idt_init - initialize IDT to each of the entry points in kern/trap/vectors.S */
 void
 idt_init(void) {
-     /* LAB1 YOUR CODE : STEP 2 */
+     /* LAB1 2012011894 : STEP 2 */
      /* (1) Where are the entry addrs of each Interrupt Service Routine (ISR)?
       *     All ISR's entry addrs are stored in __vectors. where is uintptr_t __vectors[] ?
       *     __vectors[] is in kern/trap/vector.S which is produced by tools/vector.c
@@ -48,6 +50,13 @@ idt_init(void) {
       *     You don't know the meaning of this instruction? just google it! and check the libs/x86.h to know more.
       *     Notice: the argument of lidt is idt_pd. try to find it!
       */
+
+      int i;
+      for (i = 0; i < 256; i++) { // (2)
+          // initialize all vectors as trap gate, later we can update those >= 32 to support user-defined interrupts
+          SETGATE(idt[i], 1, GD_KTEXT, __vectors[i], DPL_KERNEL);
+      }
+      lidt(&idt_pd); // (3)
 }
 
 static const char *
@@ -162,6 +171,9 @@ pgfault_handler(struct trapframe *tf) {
 static volatile int in_swap_tick_event = 0;
 extern struct mm_struct *check_mm_struct;
 
+extern volatile size_t ticks; // (1)
+
+/* trap_dispatch - dispatch based on what type of trap occurred */
 static void
 trap_dispatch(struct trapframe *tf) {
     char c;
@@ -177,15 +189,22 @@ trap_dispatch(struct trapframe *tf) {
         break;
     case IRQ_OFFSET + IRQ_TIMER:
 #if 0
-    LAB3 : If some page replacement algorithm(such as CLOCK PRA) need tick to change the priority of pages, 
-    then you can add code here. 
+    LAB3 : If some page replacement algorithm(such as CLOCK PRA) need tick to change the priority of pages,
+    then you can add code here.
 #endif
-        /* LAB1 YOUR CODE : STEP 3 */
+        /* LAB1 2012011894 : STEP 3 */
         /* handle the timer interrupt */
         /* (1) After a timer interrupt, you should record this event using a global variable (increase it), such as ticks in kern/driver/clock.c
          * (2) Every TICK_NUM cycle, you can print some info using a funciton, such as print_ticks().
          * (3) Too Simple? Yes, I think so!
          */
+
+        ticks++;
+        if (ticks >= TICK_NUM) { // (2)
+            print_ticks(); // (2)
+            ticks = 0;  // do NOT forget to reset it to 0
+        }
+        // (3) this one is really simple
         break;
     case IRQ_OFFSET + IRQ_COM1:
         c = cons_getc();
@@ -223,4 +242,3 @@ trap(struct trapframe *tf) {
     // dispatch based on what type of trap occurred
     trap_dispatch(tf);
 }
-
