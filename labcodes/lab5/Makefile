@@ -236,10 +236,12 @@ $(call create_target,ucore.img)
 
 # create swap.img
 SWAPIMG		:= $(call totarget,swap.img)
-ifeq (`uname`, Darwin)
-  BS=1M
+UNAME 		:= $(shell uname)
+
+ifeq ($(UNAME), Darwin)
+	BS=1m
 else
-  BS=1m
+	BS=1M
 endif
 
 $(SWAPIMG):
