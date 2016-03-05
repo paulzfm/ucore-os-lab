@@ -236,7 +236,7 @@ $(call create_target,ucore.img)
 
 # create swap.img
 SWAPIMG		:= $(call totarget,swap.img)
-BS			:= $(shell if [[ "$OSTYPE" == "linux-gnu" ]]; then echo '1M'; else echo '1m'; fi)
+BS			:= $(shell if [[ "$OSTYPE" = "linux-gnu" ]]; then echo '1M'; else echo '1m'; fi)
 
 $(SWAPIMG):
 	$(V)dd if=/dev/zero of=$@ bs=$(BS) count=128
