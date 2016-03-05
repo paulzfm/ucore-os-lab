@@ -59,11 +59,12 @@ idt_init(void) {
      int i;
      for (i = 0; i < 256; i++) { // (2)
          // initialize all vectors as trap gate, later we can update those >= 32 to support user-defined interrupts
-         SETGATE(idt[i], 1, GD_KTEXT, __vectors[i], DPL_KERNEL);
+         SETGATE(idt[i], 0, GD_KTEXT, __vectors[i], DPL_KERNEL);
      }
+     SETGATE(idt[T_SYSCALL], 1, GD_KTEXT, __vectors[T_SYSCALL], DPL_USER); // for lab5
      lidt(&idt_pd); // (3)
 
-     /* LAB5 YOUR CODE */
+     /* LAB5 2012011894 */
      //you should update your lab1 code (just add ONE or TWO lines of code), let user app to use syscall to get the service of ucore
      //so you should setup the syscall interrupt gate in here
 }
@@ -229,11 +230,15 @@ trap_dispatch(struct trapframe *tf) {
          * (2) Every TICK_NUM cycle, you can print some info using a funciton, such as print_ticks().
          * (3) Too Simple? Yes, I think so!
          */
-
+        /* LAB5 2012011894 */
+        /* you should update your lab1 code (just add ONE or TWO lines of code):
+         *    Every TICK_NUM cycle, you should set current process's current->need_resched = 1
+         */
         ticks++;
         if (ticks >= TICK_NUM) { // (2)
             print_ticks(); // (2)
             ticks = 0;  // do NOT forget to reset it to 0
+            current->need_resched = 1; // for lab5
         }
         // (3) this one is really simple
         break;

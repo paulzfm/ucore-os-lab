@@ -529,7 +529,7 @@ copy_range(pde_t *to, pde_t *from, uintptr_t start, uintptr_t end, bool share) {
         void *src_kvaddr = page2kva(page);          // (1)
         void *dst_kvaddr = page2kva(npage);         // (2)
         memcpy(dst_kvaddr, src_kvaddr, PGSIZE);     // (3)
-        page_insert(to, npage, start, perm);        // (4)
+        ret = page_insert(to, npage, start, perm);  // (4)
         assert(ret == 0);
         }
         start += PGSIZE;
