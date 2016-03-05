@@ -426,9 +426,9 @@ do_fork(uint32_t clone_flags, uintptr_t stack, struct trapframe *tf) {
     local_intr_save(flag);  // disable int
     {
         proc->pid = get_pid();  // get pid
-        nr_process++;           // process num inc
+        // nr_process++;           // process num inc
         hash_proc(proc);        // insert into hash_list
-        list_add(&proc_list, &(proc->list_link));  // insert into proc_list
+        // list_add(&proc_list, &(proc->list_link));  // insert into proc_list
         set_links(proc);
     }
     local_intr_restore(flag); // enable int
