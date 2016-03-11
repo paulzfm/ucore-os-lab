@@ -125,7 +125,7 @@ alloc_proc(void) {
         proc->cptr = NULL;
         proc->yptr = NULL;
         proc->optr = NULL;
-     //LAB6 YOUR CODE : (update LAB5 steps)
+     //LAB6 2012011894 : (update LAB5 steps)
     /*
      * below fields(add in LAB6) in proc_struct need to be initialized
      *     struct run_queue *rq;                       // running queue contains Process
@@ -138,7 +138,7 @@ alloc_proc(void) {
         proc->rq = NULL;
         list_init(&(proc->run_link));
         proc->time_slice = 0;
-        proc->lab6_run_pool.left = proc->lab6_run_pool.right = proc->lab6_run_pool.parent = NULL;
+        skew_heap_init(&(proc->lab6_run_pool));
         proc->lab6_stride = 0;
         proc->lab6_priority = 0;
     }
