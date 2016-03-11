@@ -5,11 +5,11 @@
 
 /* In the first fit algorithm, the allocator keeps a list of free blocks (known as the free list) and,
    on receiving a request for memory, scans along the list for the first block that is large enough to
-   satisfy the request. If the chosen block is significantly larger than that requested, then it is 
+   satisfy the request. If the chosen block is significantly larger than that requested, then it is
    usually split, and the remainder added to the list as another free block.
    Please see Page 196~198, Section 8.2 of Yan Wei Min's chinese book "Data Structure -- C programming language"
 */
-// LAB2 EXERCISE 1: YOUR CODE
+// LAB2 EXERCISE 1: 2012011894
 // you should rewrite functions: default_init,default_init_memmap,default_alloc_pages, default_free_pages.
 /*
  * Details of FFMA
@@ -31,7 +31,7 @@
  *                  p->ref should be 0, because now p is free and no reference.
  *                  We can use p->page_link to link this page to free_list, (such as: list_add_before(&free_list, &(p->page_link)); )
  *              Finally, we should sum the number of free mem block: nr_free+=n
- * (4) default_alloc_pages: search find a first free block (block size >=n) in free list and reszie the free block, return the addr
+ * (4) default_alloc_pages: search find a first free block (block size >=n) in free list and resize the free block, return the addr
  *              of malloced block.
  *              (4.1) So you should search freelist like this:
  *                       list_entry_t le = &free_list;
@@ -71,13 +71,14 @@ default_init_memmap(struct Page *base, size_t n) {
     struct Page *p = base;
     for (; p != base + n; p ++) {
         assert(PageReserved(p));
-        p->flags = p->property = 0;
-        set_page_ref(p, 0);
+        p->flags = 0;        // init p->flags as 0
+        SetPageProperty(p);  // p->flags should be set bit PG_property
+        p->property = 0;     // p->property should be set to 0
+        set_page_ref(p, 0);  // p->ref should be 0, because now p is free and no reference
+        list_add_before(&free_list, &(p->page_link)); // link this page to free_list
     }
-    base->property = n;
-    SetPageProperty(base);
-    nr_free += n;
-    list_add(&free_list, &(base->page_link));
+    base->property = n; // for the first page of free block, its property should be set to total num of block
+    nr_free += n;       // sum the number of free mem block
 }
 
 static struct Page *
@@ -87,56 +88,76 @@ default_alloc_pages(size_t n) {
         return NULL;
     }
     struct Page *page = NULL;
-    list_entry_t *le = &free_list;
+    list_entry_t *le = &free_list;  // (4.1)
+    list_entry_t *le1;
     while ((le = list_next(le)) != &free_list) {
-        struct Page *p = le2page(le, page_link);
-        if (p->property >= n) {
+        struct Page *p = le2page(le, page_link); // (4.1.1)
+        if (p->property >= n) { // (4.1.2) find
+            int i;
+            for (i = 0, le1 = le; i < n; i++, le1 = list_next(le1)) { // allocate page from p until p + n
+                struct Page *p1 = le2page(le1, page_link);
+                SetPageReserved(p1);   // (4.1.2) set PG_reserved
+                ClearPageProperty(p1); // (4.1.2) clear PG_property
+                list_del(le1);         // (4.1.2) unlink this page from free_list
+            }
             page = p;
             break;
         }
     }
     if (page != NULL) {
-        list_del(&(page->page_link));
         if (page->property > n) {
-            struct Page *p = page + n;
-            p->property = page->property - n;
-            list_add(&free_list, &(p->page_link));
+            (le2page(le1, page_link))->property = page->property - n; // (4.1.2.1)
+        }
+        nr_free -= n; // (4.1.3)
     }
-        nr_free -= n;
-        ClearPageProperty(page);
-    }
-    return page;
+    return page; // (4.1.4) or (4.2)
 }
 
 static void
 default_free_pages(struct Page *base, size_t n) {
     assert(n > 0);
-    struct Page *p = base;
-    for (; p != base + n; p ++) {
-        assert(!PageReserved(p) && !PageProperty(p));
-        p->flags = 0;
-        set_page_ref(p, 0);
+
+    // (5.1)
+    list_entry_t *le = &free_list;
+    while ((le = list_next(le)) != &free_list) {
+        if (le2page(le, page_link) > base) { // the first position higher than base
+            break;
+        }
     }
-    base->property = n;
+
+    struct Page *p;
+    for (p = base; p < base + n; p++) { // insert these pages
+        p->property = 0;
+        list_add_before(le, &(p->page_link));
+    }
+
+    // (5.2) mark base as free page
+    base->flags = 0;
     SetPageProperty(base);
-    list_entry_t *le = list_next(&free_list);
-    while (le != &free_list) {
-        p = le2page(le, page_link);
-        le = list_next(le);
-        if (base + base->property == p) {
-            base->property += p->property;
-            ClearPageProperty(p);
-            list_del(&(p->page_link));
-        }
-        else if (p + p->property == base) {
-            p->property += base->property;
-            ClearPageProperty(base);
-            base = p;
-            list_del(&(p->page_link));
+    base->property = n;
+    set_page_ref(base, 0);
+
+    // (5.3)
+    p = le2page(le, page_link);
+    if (p == base + n) { // merge forward
+        base->property += p->property; // merge p into base
+        p->property = 0;
+    }
+
+    le = list_prev(&(base->page_link));
+    p = le2page(le, page_link); // prev of base
+    if (p == base - 1) { // merge backward
+        for (; le != &free_list; le = list_prev(le)) {
+            p = le2page(le, page_link);
+            if (p->property > 0) { // find property, merge base into p
+                p->property += base->property;
+                base->property = 0;
+                break;
+            }
         }
     }
+
     nr_free += n;
-    list_add(&free_list, &(base->page_link));
 }
 
 static size_t
@@ -195,7 +216,7 @@ basic_check(void) {
     free_page(p2);
 }
 
-// LAB2: below code is used to check the first fit allocation algorithm (your EXERCISE 1) 
+// LAB2: below code is used to check the first fit allocation algorithm (your EXERCISE 1)
 // NOTICE: You SHOULD NOT CHANGE basic_check, default_check functions!
 static void
 default_check(void) {
@@ -269,4 +290,3 @@ const struct pmm_manager default_pmm_manager = {
     .nr_free_pages = default_nr_free_pages,
     .check = default_check,
 };
-
