@@ -750,7 +750,11 @@ load_icode(int fd, int argc, char **kargv) {
 
     argv_size = 0;
     for (i = 0; i < argc; i ++) {
-        uargv[i] = strcpy((char *)(stacktop + argv_size ), kargv[i]);
+        uint32_t _len = strnlen(kargv[i], EXEC_MAX_ARG_LEN);
+        char *_buf = (char *)(stacktop + argv_size);
+        memcpy(_buf, kargv[i], _len);
+        _buf[_len] = '\0';
+        // uargv[i] = strcpy((char *)(stacktop + argv_size), kargv[i]); // NOTE: may lead to buffer overflow attack
         argv_size += strnlen(kargv[i], EXEC_MAX_ARG_LEN + 1) + 1;
     }
 
