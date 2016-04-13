@@ -6,6 +6,7 @@
 
 void
 wakeup_proc(struct proc_struct *proc) {
+    cprintf("wakeup_proc: pid = %d, state = %d\n", proc->pid, proc->state);
     assert(proc->state != PROC_ZOMBIE);
     bool intr_flag;
     local_intr_save(intr_flag);
@@ -19,6 +20,7 @@ wakeup_proc(struct proc_struct *proc) {
         }
     }
     local_intr_restore(intr_flag);
+    cprintf("wakeup_proc: done, state = %d\n", proc->state);
 }
 
 void
@@ -26,6 +28,8 @@ schedule(void) {
     bool intr_flag;
     list_entry_t *le, *last;
     struct proc_struct *next = NULL;
+    cprintf("schedule: current process pid = %d, state = %d\n", current->pid, current->state);
+
     local_intr_save(intr_flag);
     {
         current->need_resched = 0;
@@ -43,10 +47,10 @@ schedule(void) {
             next = idleproc;
         }
         next->runs ++;
+        cprintf("schedule: next process pid = %d, runs = %d, state = %d\n", next->pid, next->runs, next->state);
         if (next != current) {
             proc_run(next);
         }
     }
     local_intr_restore(intr_flag);
 }
-

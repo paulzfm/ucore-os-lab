@@ -52,7 +52,7 @@ struct proc_struct {
     uintptr_t cr3;                              // CR3 register: the base addr of Page Directroy Table(PDT)
     uint32_t flags;                             // Process flag
     char name[PROC_NAME_LEN + 1];               // Process name
-    list_entry_t list_link;                     // Process link list 
+    list_entry_t list_link;                     // Process link list
     list_entry_t hash_link;                     // Process hash list
     int exit_code;                              // exit code (be sent to parent proc)
     uint32_t wait_state;                        // waiting state
@@ -86,4 +86,3 @@ int do_execve(const char *name, size_t len, unsigned char *binary, size_t size);
 int do_wait(int pid, int *code_store);
 int do_kill(int pid);
 #endif /* !__KERN_PROCESS_PROC_H__ */
-
