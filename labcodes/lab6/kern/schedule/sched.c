@@ -79,6 +79,7 @@ void
 schedule(void) {
     bool intr_flag;
     struct proc_struct *next;
+    cprintf("schedule: current pid = %d\n", current->pid);
     local_intr_save(intr_flag);
     {
         current->need_resched = 0;
@@ -93,6 +94,7 @@ schedule(void) {
         }
         next->runs ++;
         if (next != current) {
+            cprintf("schedule: ready to run pid = %d\n", next->pid);
             proc_run(next);
         }
     }
