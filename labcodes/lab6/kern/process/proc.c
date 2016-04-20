@@ -237,9 +237,11 @@ proc_run(struct proc_struct *proc) {
             lcr3(next->cr3);
             if (prev->tf) {
                 cprintf("proc_run: prev eip = 0x%x, trap eip = 0x%x\n", (prev->context).eip, prev->tf->tf_eip);
+                print_debuginfo(prev->tf->tf_eip);
             }
             if (next->tf) {
                 cprintf("proc_run: next eip = 0x%x, trap eip = 0x%x\n", (next->context).eip, next->tf->tf_eip);
+                print_debuginfo(next->tf->tf_eip);
             }
             switch_to(&(prev->context), &(next->context));
         }
